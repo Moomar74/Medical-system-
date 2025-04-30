@@ -5,6 +5,31 @@
   padding: 0;
   box-sizing: border-box;
 }
+.nav-book-button {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.3rem; /* Smaller font size */
+  font-weight: 700;
+  color: #FFFFFF;
+  background-color: #FF9999;
+  padding: 0.4rem 1rem; /* Smaller padding */
+  border-radius: 25px;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 10px rgba(255, 153, 153, 0.3);
+  animation: pulse 2s infinite;
+  margin-top: -4px; /* Push button upwards */
+}
+.nav-book-button:hover,
+.nav-book-button.active {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 15px rgba(255, 153, 153, 0.5), 0 0 10px rgba(255, 153, 153, 0.3);
+  color: #FFFFFF;
+}
+
+.nav-book-button:focus {
+  outline: 2px solid #333333;
+  outline-offset: 2px;
+}
 
 body {
   font-family: 'Open Sans', sans-serif;
