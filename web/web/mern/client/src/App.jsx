@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
 import './App.css';
 import './index.css';
 import Home from './pages/Home';
@@ -8,6 +8,7 @@ import Services from './pages/Services';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Account from './pages/Account';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
@@ -30,94 +31,117 @@ function App() {
     if (!token) {
       return <Navigate to="/login" />;
     }
-    // Small delay to allow state to settle
     return <>{children}</>;
   };
+
+  const navLinkClasses = "font-montserrat text-gray-600 hover:text-[#FF9999] transition duration-300 transform hover:scale-110";
 
   return (
     <div>
       {/* Navbar */}
-      <nav className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4">
+      <motion.nav 
+        className="bg-white shadow-md sticky top-0 z-50"
+        initial={{ y: -80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0">
-              <a href="/" className="text-2xl font-montserrat font-bold text-pink-500">
+            <motion.div 
+              className="flex-shrink-0"
+              whileHover={{ scale: 1.1, rotate: -2 }}
+              transition={{ type: 'spring', stiffness: 300 }}
+            >
+              <Link to="/" className="text-3xl font-bold font-montserrat text-[#FF9999]">
                 Dental Clinic
-              </a>
-            </div>
-            <div className="hidden md:flex space-x-6">
-              <a href="/" className="font-montserrat text-gray-600 hover:text-pink-500">Home</a>
-              <a href="/about" className="font-montserrat text-gray-600 hover:text-pink-500">About</a>
-              <a href="/services" className="font-montserrat text-gray-600 hover:text-pink-500">Services</a>
-              <a href="/contact" className="font-montserrat text-gray-600 hover:text-pink-500">Contact</a>
+              </Link>
+            </motion.div>
+            <div className="hidden md:flex items-center space-x-6">
+              <Link to="/" className={navLinkClasses}>Home</Link>
+              <Link to="/about" className={navLinkClasses}>About</Link>
+              <Link to="/services" className={navLinkClasses}>Services</Link>
+              <Link to="/contact" className={navLinkClasses}>Contact</Link>
               {isLoggedIn ? (
                 <>
-                  <a href="/account" className="font-montserrat text-gray-600 hover:text-pink-500">Account</a>
-                  <button
-                    onClick={handleLogout}
-                    className="font-montserrat text-gray-600 hover:text-pink-500"
-                  >
-                    Logout
-                  </button>
+                  <Link to="/account" className={navLinkClasses}>Account</Link>
+                  <motion.button 
+                    onClick={handleLogout} 
+                    className={navLinkClasses}
+                    whileTap={{ scale: 0.9 }}
+                  >Logout</motion.button>
                 </>
               ) : (
                 <>
-                  <a href="/login" className="font-montserrat text-gray-600 hover:text-pink-500">Login</a>
-                  <a href="/signup" className="font-montserrat text-gray-600 hover:text-pink-500">Signup</a>
+                  <Link to="/login" className={navLinkClasses}>Login</Link>
+                  <Link to="/signup" className={navLinkClasses}>Signup</Link>
                 </>
               )}
-              <a
-                href="/booking"
-                className="bg-pink-500 text-white font-montserrat py-2 px-4 rounded-full hover:bg-pink-600"
-              >
-                Book Now
-              </a>
+              <motion.div whileHover={{ scale: 1.1 }}>
+                <Link
+                  to="/booking"
+                  className="bg-gradient-to-r from-pink-400 to-red-400 text-white font-montserrat py-2 px-4 rounded-full shadow-md hover:shadow-xl transition-all"
+                >
+                  Book Now
+                </Link>
+              </motion.div>
             </div>
-            {/* Hamburger menu for mobile */}
+            {/* Hamburger menu button */}
             <div className="md:hidden">
-              <button
+              <motion.button
                 onClick={() => setIsOpen(!isOpen)}
-                className="text-gray-600 hover:text-pink-500 focus:outline-none"
+                className="text-gray-600 hover:text-[#FF9999] focus:outline-none"
+                whileTap={{ scale: 0.8 }}
               >
                 <i className={isOpen ? 'fas fa-times text-2xl' : 'fas fa-bars text-2xl'}></i>
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
+
         {/* Mobile menu */}
-        {isOpen && (
-          <div className="md:hidden bg-white shadow-md">
-            <div className="px-4 pt-2 pb-4 space-y-2">
-              <a href="/" className="block font-montserrat text-gray-600 hover:text-pink-500">Home</a>
-              <a href="/about" className="block font-montserrat text-gray-600 hover:text-pink-500">About</a>
-              <a href="/services" className="block font-montserrat text-gray-600 hover:text-pink-500">Services</a>
-              <a href="/contact" className="block font-montserrat text-gray-600 hover:text-pink-500">Contact</a>
-              {isLoggedIn ? (
-                <>
-                  <a href="/account" className="block font-montserrat text-gray-600 hover:text-pink-500">Account</a>
-                  <button
-                    onClick={handleLogout}
-                    className="block font-montserrat text-gray-600 hover:text-pink-500"
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div 
+              className="md:hidden bg-white shadow-md"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="px-4 pt-2 pb-4 space-y-2">
+                <Link to="/" className={navLinkClasses + " block"}>Home</Link>
+                <Link to="/about" className={navLinkClasses + " block"}>About</Link>
+                <Link to="/services" className={navLinkClasses + " block"}>Services</Link>
+                <Link to="/contact" className={navLinkClasses + " block"}>Contact</Link>
+                {isLoggedIn ? (
+                  <>
+                    <Link to="/account" className={navLinkClasses + " block"}>Account</Link>
+                    <motion.button 
+                      onClick={handleLogout} 
+                      className={navLinkClasses + " block"}
+                      whileTap={{ scale: 0.95 }}
+                    >Logout</motion.button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" className={navLinkClasses + " block"}>Login</Link>
+                    <Link to="/signup" className={navLinkClasses + " block"}>Signup</Link>
+                  </>
+                )}
+                <motion.div whileHover={{ scale: 1.05 }}>
+                  <Link
+                    to="/booking"
+                    className="block bg-gradient-to-r from-pink-400 to-red-400 text-white font-montserrat py-2 px-4 rounded-full text-center shadow-md hover:shadow-xl"
                   >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <a href="/login" className="block font-montserrat text-gray-600 hover:text-pink-500">Login</a>
-                  <a href="/signup" className="block font-montserrat text-gray-600 hover:text-pink-500">Signup</a>
-                </>
-              )}
-              <a
-                href="/booking"
-                className="block bg-pink-500 text-white font-montserrat py-2 px-4 rounded-full hover:bg-pink-600 text-center"
-              >
-                Book Now
-              </a>
-            </div>
-          </div>
-        )}
-      </nav>
+                    Book Now
+                  </Link>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.nav>
+
       {/* Routes */}
       <Routes>
         <Route path="/" element={<Home />} />
