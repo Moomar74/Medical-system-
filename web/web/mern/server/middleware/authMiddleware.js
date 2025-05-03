@@ -1,15 +1,26 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  const authHeader = req.header('Authorization');
+  console.log('Authorization header:', authHeader); // Debug: Log full header
+  const token = authHeader?.replace('Bearer ', '');
+  console.log('Token received:', token); // Debug: Log extracted token
   if (!token) {
-    return res.status(401).json({ message: 'No token provided' });
+    console.log('No token found in Authorization header');
+    return res.status(401).json({ message: 'No token, authorization denied' });
   }
   try {
-    const decoded = jwt.verify(token, 'your_jwt_secret');
-    req.user = decoded;
+    console.log('JWT_SECRET:', process.env.JWT_SECRET); // Debug: Log secret
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded token:', decoded); // Debug: Log decoded payload
+    if (!decoded.user || !decoded.user.id || !decoded.user.role) {
+      console.error('Invalid token payload structure:', decoded);
+      return res.status(401).json({ message: 'Invalid token payload' });
+    }
+    req.user = decoded.user;
     next();
-  } catch (error) {
+  } catch (err) {
+    console.error('Token validation error:', err.message); // Debug: Log error details
     res.status(401).json({ message: 'Invalid token' });
   }
 };

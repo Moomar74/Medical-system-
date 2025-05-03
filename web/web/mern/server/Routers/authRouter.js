@@ -1,21 +1,11 @@
 const express = require('express');
-const { signup, login } = require('../Controllers/authController');
-const authMiddleware = require('../middleware/authMiddleware');
-const User = require('../Models/User');
-
 const router = express.Router();
+const { signup, login, getProfile, updateProfile } = require('../Controllers/authController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 router.post('/signup', signup);
 router.post('/login', login);
-
-// Example protected route
-router.get('/profile', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.userId).select('-password');
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+router.get('/profile', authMiddleware, getProfile);
+router.put('/profile', authMiddleware, updateProfile);
 
 module.exports = router;
