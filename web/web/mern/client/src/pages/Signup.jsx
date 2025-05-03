@@ -159,7 +159,7 @@ function Signup() {
           </div>
           <button
             type="submit"
-            className="w-full bg-pink-400 text-white font-montserrat font-semibold text-lg py-3 rounded-full hover:bg-pink-500 transform hover:scale-105 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#FF9999] text-white font-montserrat font-semibold text-lg py-3 rounded-full hover:bg-pink-500 transform hover:scale-105 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isLoading}
             aria-label="Create a new account"
           >

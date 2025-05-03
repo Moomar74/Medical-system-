@@ -8,6 +8,7 @@ import Services from './pages/Services';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Account from './pages/Account';
+import Contact from './pages/Contact';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -38,7 +39,7 @@ function App() {
 
   return (
     <div>
-      {/* Navbar */}
+      {/* Navi */}
       <motion.nav 
         className="bg-white shadow-md sticky top-0 z-50"
         initial={{ y: -80, opacity: 0 }}
@@ -47,12 +48,16 @@ function App() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <motion.div 
+              <motion.div
               className="flex-shrink-0"
-              whileHover={{ scale: 1.1, rotate: -2 }}
+              whileHover={{ scale: 1 }}
+              whileTap={{ scale: 0.9 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
-              <Link to="/" className="text-3xl font-bold font-montserrat text-[#FF9999]">
+              <Link
+                to="/"
+                className="text-3xl font-bold font-montserrat text-[#FF9999] transition-all duration-300 hover:text-4xl"
+              >
                 Dental Clinic
               </Link>
             </motion.div>
@@ -85,7 +90,7 @@ function App() {
                 </Link>
               </motion.div>
             </div>
-            {/* Hamburger menu button */}
+            {/* Hambu mop */}
             <div className="md:hidden">
               <motion.button
                 onClick={() => setIsOpen(!isOpen)}
@@ -98,7 +103,7 @@ function App() {
           </div>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mob */}
         <AnimatePresence>
           {isOpen && (
             <motion.div 
@@ -158,7 +163,7 @@ function App() {
           }
         />
         <Route path="/locations" element={<div>Locations</div>} />
-        <Route path="/contact" element={<div>Contact</div>} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/booking" element={<div>Booking</div>} />
         <Route path="/user-dashboard" element={<div>User Dashboard</div>} />
         <Route path="/admin-dashboard" element={<div>Admin Dashboard</div>} />

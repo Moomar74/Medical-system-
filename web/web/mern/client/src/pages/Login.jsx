@@ -70,7 +70,7 @@ const Login = ({ setIsLoggedIn }) => {
           </div>
           <button
             type="submit"
-            className="w-full bg-pink-500 text-white font-montserrat py-3 rounded-full hover:bg-pink-600 transition duration-300"
+            className="w-full bg-[#FF9999] text-white font-montserrat py-3 rounded-full hover:bg-pink-600 transition duration-300"
           >
             Login
           </button>

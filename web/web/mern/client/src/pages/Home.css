@@ -28,7 +28,7 @@
 }
 
 .hero-overlay {
-  background:rgba(255, 153, 153, 0.1);
+  background: rgba(0, 0, 0, 0.5);
   position: absolute;
   width: 100%;
   height: 100%;
@@ -48,7 +48,7 @@
 
 .hero-title {
   font-family: 'Montserrat', sans-serif;
-  font-size: 4rem;
+  font-size: 5rem;
   font-weight: 900;
   margin-bottom: 1.2rem;
   line-height: 1.1;
@@ -62,7 +62,7 @@
 
 .hero-tagline {
   font-family: 'Open Sans', sans-serif;
-  font-size: 1.44rem;
+  font-size: 1.5rem;
   font-weight: 400;
   margin-bottom: 2rem;
   color: #FFFFFF;
@@ -175,19 +175,17 @@
   width: 100%;
   height: 1px;
   background: linear-gradient(to right, transparent, #FF9999, transparent);
-  margin: 1.6rem  Responsive Design0;
+  margin: 1.6rem 0;
 }
-
 
 .services-section {
   padding: 6.4rem 3.2rem;
   background-color: #FFFFFF;
-  animation: fadeInSection 0.8s ease-in-out;
 }
 
 .services-section h2 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 2.8rem;
+  font-size: 3rem;
   font-weight: 900;
   text-align: center;
   margin-bottom: 4rem;
@@ -202,8 +200,8 @@
   margin: 0 auto;
 }
 
-
 .service-card {
+  position: relative;
   background-color: #FFFFFF;
   padding: 3rem;
   border-radius: 20px;
@@ -213,7 +211,6 @@
   border: 2px solid transparent;
   background: linear-gradient(to right, #FFFFFF, #FFFFFF) padding-box, linear-gradient(to right, #FF9999, #FFFFFF) border-box;
 }
-
 
 .service-card:hover {
   transform: translateY(-15px);
@@ -226,7 +223,6 @@
   margin-bottom: 1.6rem;
   color: #FF9999;
 }
-
 
 .service-card h3 {
   font-family: 'Montserrat', sans-serif;
@@ -244,12 +240,11 @@
 .why-choose-us {
   padding: 6.4rem 3.2rem;
   background-color: #F9F9F9;
-  animation: fadeInSection 0.8s ease-in-out;
 }
 
 .why-choose-us h2 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 2.8rem;
+  font-size: 3rem;
   font-weight: 900;
   text-align: center;
   margin-bottom: 4rem;
@@ -264,21 +259,15 @@
   margin: 0 auto;
 }
 
-
 .reason-card {
+  position: relative;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   padding: 2.4rem;
   border-radius: 16px;
   text-align: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(255, 153, 153, 0.2);
-}
-
-.reason-card:hover {
-  transform: translateY(-12px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
 }
 
 .reason-card i {
@@ -303,12 +292,11 @@
 .testimonial-section {
   padding: 6.4rem 3.2rem;
   background-color: #FFFFFF;
-  animation: fadeInSection 0.8s ease-in-out;
 }
 
 .testimonial-section h2 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 2.8rem;
+  font-size: 3rem;
   font-weight: 900;
   text-align: center;
   margin-bottom: 4rem;
@@ -316,20 +304,12 @@
 }
 
 .testimonial-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 3.2rem;
+  background: #FFFFFF;
+  padding: 2rem;
   border-radius: 16px;
-  text-align: center;
   margin: 0 1.6rem;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
-  background: 
-  linear-gradient(to right, #FFFFFF, #FFFFFF) padding-box, 
-  linear-gradient(to right, rgba(255, 153, 153, 1), rgba(255, 255, 255, 1)) border-box;
-border: 1px solid transparent;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  animation: scaleIn 0.6s ease-in-out;
-  position: relative;
+  border: 1px solid transparent;
 }
 
 .testimonial-card .feedback {
@@ -337,33 +317,14 @@ border: 1px solid transparent;
   font-size: 1.2rem;
   font-style: italic;
   color: #555555;
-  margin-bottom: 1.6rem;
-  position: relative;
-}
-
-.testimonial-card .feedback:before,
-.testimonial-card .feedback:after {
-  content: '"';
-  font-size: 2.4rem;
-  color: #FF9999;
-  position: absolute;
-}
-
-.testimonial-card .feedback:before {
-  top: -0.8rem;
-  left: -1.2rem;
-}
-
-.testimonial-card .feedback:after {
-  bottom: -1.6rem;
-  right: -1.2rem;
+  margin-bottom: 1rem;
 }
 
 .testimonial-card .name {
   font-family: 'Montserrat', sans-serif;
   font-size: 1.28rem;
   font-weight: 700;
-  color: #333333;
+  color: #FF9999;
 }
 
 .slick-dots li button:before {
@@ -383,44 +344,67 @@ border: 1px solid transparent;
   }
 }
 
-footer {
-  background-color: #FFFFFF;
-  color: #333333;
-  padding: 0.02rem;
+.footer {
+  background-color: #333333;
+  color: #FFFFFF;
+  padding: 3rem 1rem;
   text-align: center;
-  border-top: 3px solid #FF9999;
-  box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.08);
 }
 
-footer .footer-link {
-  color: #333333;
-  text-decoration: none;
-  margin: 0 1.6rem;
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+}
+
+.footer-heading {
   font-family: 'Montserrat', sans-serif;
-  font-size: 1.04rem;
+  font-size: 1.5rem;
   font-weight: 700;
+  margin-bottom: 1rem;
+  color: #FFFFFF;
+}
+
+.footer-text {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 0.96rem;
+  color: #CCCCCC;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  space-y: 0.5rem;
+}
+
+.footer-links li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-link {
+  color: #FFFFFF;
+  text-decoration: none;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 0.96rem;
   transition: color 0.2s ease;
 }
 
-footer .footer-link:hover {
+.footer-link:hover {
   color: #FF9999;
 }
 
-footer .footer-link:focus {
-  outline: 2px solid #FF9999;
-  outline-offset: 2px;
-}
-
 .social-links {
-  margin: 1.6rem 0;
   display: flex;
   justify-content: center;
   gap: 1.2rem;
 }
 
 .social-links a {
-  font-size: 1.2rem;
-  color: #333333;
+  font-size: 1.5rem;
+  color: #FFFFFF;
   transition: color 0.2s ease;
 }
 
@@ -429,15 +413,11 @@ footer .footer-link:focus {
   color: #FF9999;
 }
 
-footer p {
-  margin-top: 1.6rem;
+.footer-bottom {
+  margin-top: 2rem;
+  font-family: 'Open Sans', sans-serif;
   font-size: 0.88rem;
-  color: #555555;
-}
-
-@keyframes fadeInSection {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  color: #999999;
 }
 
 @media (max-width: 768px) {
@@ -446,11 +426,11 @@ footer p {
   }
 
   .hero-title {
-    font-size: 2.8rem;
+    font-size: 3rem;
   }
 
   .hero-tagline {
-    font-size: 1.12rem;
+    font-size: 1.2rem;
   }
 
   .hero-buttons {
@@ -489,5 +469,8 @@ footer p {
   .hero-overlay {
     background: rgba(0, 0, 0, 0.6);
   }
- 
+
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
 }

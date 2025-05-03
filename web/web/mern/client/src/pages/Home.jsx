@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
+import { motion } from 'framer-motion';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
@@ -41,7 +42,12 @@ function HeroSection() {
   };
 
   return (
-    <section className="hero-bg">
+    <motion.section
+      className="hero-bg"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+    >
       {!isVideoPlaying && (
         <div className="video-fallback">
           <button className="play-button" onClick={handlePlayVideo} aria-label="Play hero video">
@@ -70,28 +76,54 @@ function HeroSection() {
       </video>
       <div className="hero-overlay"></div>
       <div className="hero-content">
-        <h1 className="hero-title fade-text">{heroMessage}</h1>
-        <p className="hero-tagline">Expert Dental Care for a Confident Smile</p>
-        <div className="hero-buttons">
+        <motion.h1
+          className="hero-title fade-text"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          {heroMessage}
+        </motion.h1>
+        <motion.p
+          className="hero-tagline"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          Expert Dental Care for a Confident Smile
+        </motion.p>
+        <motion.div
+          className="hero-buttons"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
           <Link to="/booking" className="hero-button primary" aria-label="Book a Re-Examination Appointment">
             Book Now
           </Link>
           <Link to="/services" className="hero-button secondary" aria-label="Learn More About Our Services">
             Discover Services
           </Link>
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
-function ServiceCard({ iconClass, title, description }) {
+function ServiceCard({ iconClass, title, description, index }) {
   return (
-    <div className="service-card">
+    <motion.div
+      className="service-card group"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      whileHover={{ scale: 1.05 }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-t from-[#FF9999]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg pointer-events-none"></div>
       <i className={iconClass} aria-hidden="true"></i>
       <h3>{title}</h3>
       <p>{description}</p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -104,10 +136,16 @@ function ServicesSection() {
 
   return (
     <section className="services-section">
-      <h2>Our Expertise</h2>
+      <motion.h2
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        Our Expertise
+      </motion.h2>
       <div className="services-grid">
         {services.map((service, index) => (
-          <ServiceCard key={index} {...service} />
+          <ServiceCard key={index} {...service} index={index} />
         ))}
       </div>
     </section>
@@ -123,14 +161,28 @@ function WhyChooseUs() {
 
   return (
     <section className="why-choose-us">
-      <h2>Why Choose Us?</h2>
+      <motion.h2
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        Why Choose Us?
+      </motion.h2>
       <div className="reasons-grid">
         {reasons.map((reason, index) => (
-          <div key={index} className="reason-card">
+          <motion.div
+            key={index}
+            className="reason-card group"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-[#FF9999]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg pointer-events-none"></div>
             <i className={reason.iconClass} aria-hidden="true"></i>
             <h3>{reason.title}</h3>
             <p>{reason.description}</p>
-          </div>
+          </motion.div>
         ))}
       </div>
     </section>
@@ -165,14 +217,30 @@ function TestimonialSlider() {
 
   return (
     <section className="testimonial-section">
-      <h2>Client Testimonials</h2>
+      <motion.h2
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        Client Testimonials
+      </motion.h2>
       <Slider {...settings}>
         {testimonials.map((testimonial, index) => (
           <div key={index}>
-            <div className="testimonial-card">
-              <p className="feedback">"{testimonial.feedback}"</p>
-              <p className="name">{testimonial.name}</p>
-            </div>
+            <motion.div
+              className="testimonial-card flex items-start space-x-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: index * 0.2 }}
+            >
+              <div className="w-12 h-12 bg-[#FF9999] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                {testimonial.name.charAt(0)}
+              </div>
+              <div>
+                <p className="feedback">"{testimonial.feedback}"</p>
+                <p className="name">{testimonial.name}</p>
+              </div>
+            </motion.div>
           </div>
         ))}
       </Slider>
@@ -182,26 +250,44 @@ function TestimonialSlider() {
 
 function Footer() {
   return (
-    <footer>
-      <div>
-        <Link to="/" className="footer-link">Home</Link>
-        <Link to="/about" className="footer-link">About</Link>
-        <Link to="/locations" className="footer-link">Locations</Link>
-        <Link to="/contact" className="footer-link">Contact</Link>
+    <motion.footer
+      className="footer"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="footer-content">
+        <div>
+          <h3 className="footer-heading">Dental Clinic</h3>
+          <p className="footer-text">Transforming smiles with care and precision.</p>
+        </div>
+        <div>
+          <h3 className="footer-heading">Quick Links</h3>
+          <ul className="footer-links">
+            <li><Link to="/about" className="footer-link">About</Link></li>
+            <li><Link to="/services" className="footer-link">Services</Link></li>
+            <li><Link to="/contact" className="footer-link">Contact</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="footer-heading">Connect</h3>
+          <div className="social-links">
+            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Facebook">
+              <i className="fab fa-facebook-f"></i>
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram">
+              <i className="fab fa-instagram"></i>
+            </a>
+            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Twitter">
+              <i className="fab fa-twitter"></i>
+            </a>
+          </div>
+        </div>
       </div>
-      <div className="social-links">
-        <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Facebook" title="Follow us on Facebook">
-          <i className="fab fa-facebook-f"></i>
-        </a>
-        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Twitter" title="Follow us on Twitter">
-          <i className="fab fa-twitter"></i>
-        </a>
-        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram" title="Follow us on Instagram">
-          <i className="fab fa-instagram"></i>
-        </a>
+      <div className="footer-bottom">
+        <p>© 2025 Dental Clinic. All rights reserved.</p>
       </div>
-      <p>© 2025 Dental Clinic. All rights reserved.</p>
-    </footer>
+    </motion.footer>
   );
 }
 
