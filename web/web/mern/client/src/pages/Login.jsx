@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../assets/css/styles.css';
 
-function Login() {
+function Login({ onLogin }) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -41,14 +41,17 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
+
     setIsLoading(true);
     try {
       const response = await axios.post('http://localhost:5000/api/auth/login', formData);
       localStorage.setItem('token', response.data.token);
-      navigate(response.data.user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard', { replace: true });
+
+      if (onLogin) onLogin(); // ✅ Notify parent of successful login
+
+      const userRole = response.data.user.role;
+      navigate(userRole === 'admin' ? '/admin-dashboard' : '/user-dashboard', { replace: true });
     } catch (err) {
       console.error('Login error:', err);
       setError(err.response?.data?.message || 'An error occurred');
