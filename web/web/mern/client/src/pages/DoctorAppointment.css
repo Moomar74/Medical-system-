@@ -1,0 +1,42 @@
+.doctor-appointment-container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+h1 {
+    color: #333;
+}
+
+.doctor-view, .appointment-section, .patient-view {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.availability-form input {
+    margin-right: 10px;
+    padding: 8px;
+}
+
+.doctor-list, .appointment-list {
+    list-style: none;
+    padding: 0;
+}
+
+.doctor-item, .availability-item {
+    margin-bottom: 10px;
+}
+
+button {
+    background-color: #c9215c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}

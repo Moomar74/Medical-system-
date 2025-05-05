@@ -361,7 +361,7 @@ const Account = () => {
                     whileHover={{ scale: 1.05 }}
                     aria-label="Book a new appointment"
                   >
-                    Book Appointment
+                    Show Personal Appointments
                   </motion.a>
                 </div>
               </div>

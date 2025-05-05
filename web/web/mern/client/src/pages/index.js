@@ -4,3 +4,4 @@ export { default as About } from './About.jsx';
 export { default as Login } from './Login.jsx';
 export { default as Services } from './Services.jsx';
 export { default as Signup } from './Signup.jsx';
+export { default as Manage } from './Manage_Appointment.jsx';
