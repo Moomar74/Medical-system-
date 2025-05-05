@@ -15,7 +15,7 @@ exports.signup = async (req, res) => {
     await user.save();
     const payload = { user: { id: user._id, role: user.role } };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-    console.log('Token generated for signup:', token); // Debug log
+    console.log('Token generated for signup:', token);
     res.status(201).json({
       token,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
@@ -38,7 +38,7 @@ exports.login = async (req, res) => {
     }
     const payload = { user: { id: user._id, role: user.role } };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-    console.log('Token generated for login:', token); // Debug log
+    console.log('Token generated for login:', token);
     res.json({
       token,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
@@ -63,16 +63,67 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name } = req.body;
+    const { name, email, specialty } = req.body;
+    const updateData = { name };
+    if (email) updateData.email = email;
+    if (specialty && req.user.role === 'doctor') updateData.specialty = specialty;
+    
     const user = await User.findByIdAndUpdate(
       userId,
-      { name },
+      updateData,
       { new: true, runValidators: true }
     );
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json({ _id: user._id, name: user.name, email: user.email, role: user.role });
+    res.json({ _id: user._id, name: user.name, email: user.email, role: user.role, specialty: user.specialty });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.createDoctor = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Unauthorized: Only admins can create doctors' });
+    }
+
+    const { name, email, password, specialty } = req.body;
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    user = new User({ name, email, password, role: 'doctor', specialty });
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    await user.save();
+
+    res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role, specialty: user.specialty });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.deleteDoctor = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Unauthorized: Only admins can delete doctors' });
+    }
+
+    const doctorId = req.params.doctorId;
+    const user = await User.findById(doctorId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    if (user.role !== 'doctor') {
+      return res.status(400).json({ message: 'User is not a doctor' });
+    }
+
+    await User.findByIdAndDelete(doctorId);
+    res.json({ message: 'Doctor deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

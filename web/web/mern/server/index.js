@@ -36,7 +36,6 @@ mongoose.connect(process.env.MONGODB_URI, {
   useUnifiedTopology: true,
 }).then(() => {
   console.log('Connected to MongoDB Atlas');
-  // Debug: List databases to confirm connection
   mongoose.connection.db.admin().listDatabases((err, result) => {
     if (err) {
       console.error('Error listing databases:', err);
@@ -50,20 +49,20 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 
 // Routes
-let authRouter;
+let authRouter, appointmentRouter, doctorRouter;
 try {
-  authRouter = require('./Routers/authRouter'); // Try Routers first
-  console.log('Loaded authRouter from ./Routers/authRouter');
+  authRouter = require('./Routers/authRouter');
+  appointmentRouter = require('./Routers/appointmentRouter');
+  doctorRouter = require('./Routers/doctorRouter');
+  console.log('Loaded routers from ./Routers/');
 } catch (e) {
-  try {
-    authRouter = require('./Routes/authRouter'); // Fallback to Routes
-    console.log('Loaded authRouter from ./Routes/authRouter');
-  } catch (e) {
-    console.error('Error: Cannot find authRouter in ./Routers/ or ./Routes/. Exiting...', e);
-    process.exit(1);
-  }
+  console.error('Error: Cannot find routers in ./Routers/. Exiting...', e);
+  process.exit(1);
 }
+
 app.use('/api/auth', authRouter);
+app.use('/api/appointment', appointmentRouter);
+app.use('/api/doctor', doctorRouter);
 
 // Start Server
 const PORT = process.env.PORT || 5000;

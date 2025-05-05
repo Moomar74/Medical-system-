@@ -1,42 +1,41 @@
 .doctor-appointment-container {
-    padding: 20px;
-    font-family: Arial, sans-serif;
-}
-
-h1 {
-    color: #333;
-}
-
-.doctor-view, .appointment-section, .patient-view {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.availability-form input {
-    margin-right: 10px;
-    padding: 8px;
-}
-
-.doctor-list, .appointment-list {
+    padding: 0; /* Padding handled by sections */
+    font-family: 'Open Sans', sans-serif;
+  }
+  
+  /* Remove redundant h1 styling since it's handled in JSX */
+  h1, h2, h3 {
+    font-family: 'Montserrat', sans-serif;
+  }
+  
+  .doctor-view, .appointment-section {
+    margin-bottom: 2rem;
+  }
+  
+  .availability-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .availability-form input {
+    margin-right: 0; /* Handled by gap */
+  }
+  
+  .doctor-list, .appointment-list, .availability-list {
     list-style: none;
     padding: 0;
-}
-
-.doctor-item, .availability-item {
-    margin-bottom: 10px;
-}
-
-button {
-    background-color: #c9215c;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
+  }
+  
+  .doctor-item, .availability-item {
+    margin-bottom: 1rem;
+  }
+  
+  /* Remove button styles since they're handled in JSX */
+  button {
+    /* No styles needed; overridden in JSX */
+  }
+  
+  button:hover {
+    /* No styles needed; overridden in JSX */
+  }
