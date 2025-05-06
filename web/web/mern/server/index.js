@@ -1,17 +1,20 @@
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // Explicitly allow frontend origin
+  credentials: true,
+}));
 app.use(express.json());
 
 // Debug environment variables
-console.log('MONGODB_URI:', process.env.MONGODB_URI ? process.env.MONGODB_URI : 'Not set');
-console.log('JWT_SECRET:', process.env.JWT_SECRET ? process.env.JWT_SECRET : 'Not set');
+console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
 
 if (!process.env.MONGODB_URI) {
   console.error('Error: MONGODB_URI is not defined in .env file. Exiting...');
@@ -23,29 +26,46 @@ if (!process.env.MONGODB_URI.includes('mongodb+srv')) {
   process.exit(1);
 }
 
-// Disconnect any existing connections
+// MongoDB connection with retry logic
+const connectDB = async () => {
+  let retries = 5;
+  while (retries) {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000,
+        maxPoolSize: 10, // Connection pooling
+      });
+      console.log('Connected to MongoDB Atlas');
+      mongoose.connection.db.admin().listDatabases((err, result) => {
+        if (err) {
+          console.error('Error listing databases:', err);
+        } else {
+          console.log('Available databases:', result.databases.map(db => db.name));
+        }
+      });
+      break;
+    } catch (err) {
+      console.error('MongoDB connection error:', err);
+      retries -= 1;
+      if (retries === 0) {
+        console.error('Max retries reached. Exiting...');
+        process.exit(1);
+      }
+      console.log(`Retrying connection (${retries} attempts left)...`);
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
+};
+
+// Disconnect any existing connections and connect
 mongoose.disconnect().then(() => {
   console.log('Disconnected from any existing MongoDB connections');
+  connectDB();
 }).catch(err => {
   console.error('Error disconnecting existing connections:', err);
-});
-
-// Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
-  console.log('Connected to MongoDB Atlas');
-  mongoose.connection.db.admin().listDatabases((err, result) => {
-    if (err) {
-      console.error('Error listing databases:', err);
-    } else {
-      console.log('Available databases:', result.databases.map(db => db.name));
-    }
-  });
-}).catch((err) => {
-  console.error('MongoDB connection error:', err);
-  process.exit(1);
+  connectDB();
 });
 
 // Routes
@@ -63,6 +83,12 @@ try {
 app.use('/api/auth', authRouter);
 app.use('/api/appointment', appointmentRouter);
 app.use('/api/doctor', doctorRouter);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err.stack);
+  res.status(500).json({ message: 'Internal server error', error: err.message });
+});
 
 // Start Server
 const PORT = process.env.PORT || 5000;

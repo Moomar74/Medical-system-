@@ -12,7 +12,7 @@ export const getAppointments = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching appointments:', error);
-    throw error;
+    throw { message: 'Failed to load appointments', error: error.message };
   }
 };
 
@@ -24,7 +24,7 @@ export const getDoctorAppointments = async (doctorId) => {
     return response.data;
   } catch (error) {
     console.error('Error fetching doctor appointments:', error);
-    throw error;
+    throw { message: 'Failed to load doctor appointments', error: error.message };
   }
 };
 
@@ -36,7 +36,7 @@ export const getAllAppointments = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching all appointments:', error);
-    throw error;
+    throw { message: 'Failed to load all appointments', error: error.message };
   }
 };
 
@@ -48,7 +48,7 @@ export const createAppointment = async (appointmentData) => {
     return response.data;
   } catch (error) {
     console.error('Error creating appointment:', error);
-    throw error;
+    throw { message: 'Failed to create appointment', error: error.message };
   }
 };
 
@@ -60,7 +60,7 @@ export const deleteAppointment = async (appointmentId) => {
     return response.data;
   } catch (error) {
     console.error('Error deleting appointment:', error);
-    throw error;
+    throw { message: 'Failed to delete appointment', error: error.message };
   }
 };
 
@@ -72,7 +72,7 @@ export const createDoctor = async (doctorData) => {
     return response.data;
   } catch (error) {
     console.error('Error creating doctor:', error);
-    throw error;
+    throw { message: 'Failed to create doctor', error: error.message };
   }
 };
 
@@ -84,7 +84,7 @@ export const deleteDoctor = async (doctorId) => {
     return response.data;
   } catch (error) {
     console.error('Error deleting doctor:', error);
-    throw error;
+    throw { message: 'Failed to delete doctor', error: error.message };
   }
 };
 
@@ -96,6 +96,18 @@ export const getDoctors = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching doctors:', error);
-    throw error;
+    throw { message: 'Failed to load doctors', error: error.message };
+  }
+};
+
+export const getDoctorAvailability = async (doctorId) => {
+  try {
+    const response = await axios.get(`${DOCTOR_URL}/availability/${doctorId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching doctor availability:', error);
+    throw { message: 'Failed to load doctor availability', error: error.message };
   }
 };

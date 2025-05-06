@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate for redirect
 import { motion } from 'framer-motion';
-import { getAppointments, createAppointment } from '../services/appointmentService';
+import { getAppointments, createAppointment, getDoctors } from '../services/appointmentService';
 import AppointmentCard from '../components/AppointmentCard';
 
 const UserAppointmentsPage = () => {
@@ -11,32 +11,57 @@ const UserAppointmentsPage = () => {
     date: '',
     time: '',
     description: '',
-    doctorId: '' // Added for selecting a doctor
+    doctorId: ''
   });
   const [doctors, setDoctors] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
+  const navigate = useNavigate(); // For redirecting to login if token is invalid
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const [appointmentData, doctorData] = await Promise.all([
-          getAppointments(),
-          getDoctors()
+          getAppointments().catch(err => {
+            throw new Error(`Appointments fetch failed: ${err.message}`);
+          }),
+          getDoctors().catch(err => {
+            if (err.message.includes('Token')) {
+              // Redirect to login if token is invalid
+              localStorage.removeItem('token');
+              localStorage.removeItem('role');
+              localStorage.removeItem('userId');
+              navigate('/login');
+              throw new Error('Session expired. Please log in again.');
+            }
+            throw new Error(`Doctors fetch failed: ${err.message}`);
+          })
         ]);
         setAppointments(appointmentData);
-        setDoctors(doctorData);
-        setError(null);
+        // Handle the doctorData response
+        if (doctorData.doctors) {
+          // If backend returns { message, doctors }
+          setDoctors(doctorData.doctors);
+          if (doctorData.doctors.length === 0) {
+            setError('No doctors available. Please contact an admin to add doctors.');
+          }
+        } else {
+          // If backend returns an array directly
+          setDoctors(doctorData);
+          if (doctorData.length === 0) {
+            setError('No doctors available. Please contact an admin to add doctors.');
+          }
+        }
       } catch (err) {
-        setError('Failed to load data.');
+        setError(err.message.includes('Doctors fetch failed') ? 'Failed to load doctors. Please try again.' : err.message);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -212,7 +237,7 @@ const UserAppointmentsPage = () => {
                 type="submit"
                 className="bg-[#FF9999] text-white font-montserrat font-bold py-2 px-6 rounded-full hover:bg-pink-600 transition duration-300"
                 whileHover={{ scale: 1.05 }}
-                disabled={loading}
+                disabled={loading || doctors.length === 0} // Disable if no doctors
                 aria-label="Book appointment"
               >
                 {loading ? 'Booking...' : 'Book Appointment'}
