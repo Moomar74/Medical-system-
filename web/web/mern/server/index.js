@@ -7,10 +7,13 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000', // Explicitly allow frontend origin
+  origin: ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
 }));
-app.use(express.json());
+
+app.use(express.json()); // ✅ Add this line
+app.use(express.urlencoded({ extended: true }));
+
 
 // Debug environment variables
 console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
