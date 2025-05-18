@@ -1,5 +1,6 @@
 const Appointment = require('../Models/Appointment');
 const User = require('../Models/User');
+const Doctor = require('../Models/Doctor');
 
 exports.getAppointments = async (req, res) => {
   try {
@@ -32,7 +33,7 @@ exports.getAllAppointments = async (req, res) => {
 
 exports.getDoctors = async (req, res) => {
   try {
-    const doctors = await User.find({ role: 'doctor' }).select('name specialty');
+    const doctors = await Doctor.find().select('name specialty email');
     if (!doctors || doctors.length === 0) {
       return res.status(200).json({ message: 'No doctors available', doctors: [] });
     }

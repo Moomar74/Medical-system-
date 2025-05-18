@@ -1,33 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserDoctor } from '@fortawesome/free-solid-svg-icons';
+import { getDoctors } from '../services/appointmentService';
 
 library.add(faUserDoctor);
 
 const About = () => {
-  // Back
-  const team = [
-    {
-      name: 'Dr. Mina Cs, DDS',
-      role: 'Lead Dentist',
-      specialty: 'Cosmetic Dentistry',
-      bio: 'With over 15 years of experience, Dr. Carter specializes in aesthetic dental solutions, helping patients achieve their dream smiles.',
-    },
-    {
-      name: 'Dr. Mohamed CS, DMD',
-      role: 'Orthodontist',
-      specialty: 'Orthodontics',
-      bio: 'Dr. Lee is an expert in orthodontics, dedicated to creating perfectly aligned smiles with innovative techniques.',
-    },
-    {
-      name: 'Dr. Mahmoud Cs, MD',
-      role: 'Oral Surgeon',
-      specialty: 'Dental Surgery',
-      bio: 'A board-certified oral surgeon, Dr. Johnson excels in complex dental surgeries with a focus on patient comfort.',
-    },
-  ];
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const data = await getDoctors();
+        setDoctors(data);
+      } catch (err) {
+        setError('Failed to load doctors');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDoctors();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -121,35 +118,37 @@ const About = () => {
         >
           Our Esteemed Team
         </motion.h2>
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12">
-          {team.map((member, index) => (
-            <motion.div
-              key={index}
-              className="relative bg-white shadow-xl rounded-lg p-8 text-center group"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              whileHover={{ scale: 1.05 }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-[#FF9999]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg pointer-events-none"></div>
-              <div className="w-24 h-24 bg-[#FF9999] rounded-full mx-auto mb-6 flex items-center justify-center text-white font-bold text-3xl">
-                {member.name.charAt(4)}
-              </div>
-              <h3 className="text-xl font-bold font-montserrat text-gray-800">
-                {member.name}
-              </h3>
-              <p className="text-[#FF9999] font-montserrat font-semibold mt-2">
-                {member.role}
-              </p>
-              <p className="text-gray-600 font-open-sans mt-2">
-                Specialty: {member.specialty}
-              </p>
-              <p className="text-gray-600 font-open-sans mt-4 leading-relaxed">
-                {member.bio}
-              </p>
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center text-gray-500">Loading doctors...</div>
+        ) : error ? (
+          <div className="text-center text-red-500">{error}</div>
+        ) : (
+          <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12">
+            {doctors.map((doctor, index) => (
+              <motion.div
+                key={doctor._id || index}
+                className="relative bg-white shadow-xl rounded-lg p-8 text-center group"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-[#FF9999]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg pointer-events-none"></div>
+                <div className="w-24 h-24 bg-[#FF9999] rounded-full mx-auto mb-6 flex items-center justify-center text-white font-bold text-3xl">
+                  {doctor.name ? doctor.name.charAt(4) : '?'}
+                </div>
+                <h3 className="text-xl font-bold font-montserrat text-gray-800">
+                  {doctor.name}
+                </h3>
+                <p className="text-[#FF9999] font-montserrat font-semibold mt-2">
+                  {doctor.specialty}
+                </p>
+             
+                {/* Optionally add a bio if you add it to the Doctor model */}
+              </motion.div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Call-to-Action Section */}

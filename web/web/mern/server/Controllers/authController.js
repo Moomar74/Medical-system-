@@ -1,6 +1,7 @@
 const User = require('../Models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const Doctor = require('../Models/Doctor');
 
 exports.signup = async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -150,6 +151,15 @@ exports.createDoctor = async (req, res) => {
     user.password = await bcrypt.hash(password, salt);
     await user.save();
 
+    // Add to doctors collection
+    const doctor = new Doctor({
+      userId: user._id,
+      name: user.name,
+      email: user.email,
+      specialty: user.specialty
+    });
+    await doctor.save();
+
     res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role, specialty: user.specialty });
   } catch (error) {
     console.error('Create doctor error:', error);
@@ -175,6 +185,8 @@ exports.deleteDoctor = async (req, res) => {
     }
 
     await User.findByIdAndDelete(doctorId);
+    // Remove from doctors collection
+    await Doctor.findOneAndDelete({ userId: doctorId });
     res.json({ message: 'Doctor deleted successfully' });
   } catch (error) {
     console.error('Delete doctor error:', error);
