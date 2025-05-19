@@ -15,6 +15,8 @@ import UserAppointmentsPage from './pages/UserAppointmentsPage';
 import AdminDoctors from './pages/AdminDoctors';
 import ProtectedRoute from './components/ProtectedRoute'; // Import the new ProtectedRoute component
 import Loader from './components/Loader';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
@@ -264,6 +266,9 @@ function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} setUserRole={setUserRole} />} />
               <Route path="/signup" element={<Signup setIsLoggedIn={setIsLoggedIn} setUserRole={setUserRole} />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />        
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
               {/* Protected Routes */}
               <Route

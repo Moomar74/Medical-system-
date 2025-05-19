@@ -20,13 +20,16 @@ const Login = ({ setIsLoggedIn }) => {
         email,
         password,
       });
-      const token = response.data.token;
+      const { token, role, userId } = response.data;
       localStorage.setItem('token', token);
+      localStorage.setItem('role', role);
+      localStorage.setItem('userId', userId);
       setIsLoggedIn(true);
-      console.log('Login successful, token set:', token); // Debug log
-      navigate('/account');
+      console.log('Login successful, data set:', { token, role, userId });
+      navigate('/appointments');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
+      console.error('Login error:', err.response?.data || err);
     }
   };
 
@@ -76,6 +79,11 @@ const Login = ({ setIsLoggedIn }) => {
           </button>
         </form>
         <p className="mt-4 text-center font-open-sans text-gray-600">
+          <a href="/forgot-password" className="text-pink-500 hover:underline">
+            Forgot Password?
+          </a>
+        </p>
+        <p className="mt-2 text-center font-open-sans text-gray-600">
           Don't have an account?{' '}
           <a href="/signup" className="text-pink-500 hover:underline">
             Sign up
