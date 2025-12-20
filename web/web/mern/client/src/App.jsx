@@ -13,29 +13,41 @@ import Contact from './pages/Contact';
 import DoctorAppointments from './pages/DoctorAppointment';
 import UserAppointmentsPage from './pages/UserAppointmentsPage';
 import AdminDoctors from './pages/AdminDoctors';
-import ProtectedRoute from './components/ProtectedRoute'; // Import the new ProtectedRoute component
+import ProtectedRoute from './components/ProtectedRoute';
 import Loader from './components/Loader';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
-  const [userRole, setUserRole] = useState(localStorage.getItem('role') || null);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token') || !!sessionStorage.getItem('token'));
+  const [userRole, setUserRole] = useState(localStorage.getItem('role') || sessionStorage.getItem('role') || null);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    console.log('App useEffect - Token:', token, 'Role:', localStorage.getItem('role')); // Debug log
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+    console.log('App useEffect - Token:', token, 'Role:', role); // Debug log
     setIsLoggedIn(!!token);
     if (token) {
       try {
+        // Properly decode JWT token
         const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('Decoded token payload:', payload); // Debug log
+
+        // Extract role from user object in payload
         const roleFromToken = payload.user?.role;
+        console.log('Role extracted from token:', roleFromToken); // Debug log
+
         if (roleFromToken) {
-          localStorage.setItem('role', roleFromToken);
+          if (roleFromToken === 'admin') {
+            sessionStorage.setItem('role', roleFromToken);
+          } else {
+            localStorage.setItem('role', roleFromToken);
+          }
           setUserRole(roleFromToken);
+          console.log('Role set in storage:', roleFromToken); // Debug log
+        } else {
+          console.error('Role not found in token payload');
         }
       } catch (error) {
         console.error('Error decoding token:', error);
@@ -43,6 +55,9 @@ function App() {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         localStorage.removeItem('userId');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('role');
+        sessionStorage.removeItem('userId');
         setIsLoggedIn(false);
         setUserRole(null);
         navigate('/login', { replace: true });
@@ -57,6 +72,9 @@ function App() {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('userId');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('role');
+    sessionStorage.removeItem('userId');
     setIsLoggedIn(false);
     setUserRole(null);
     navigate('/login');
@@ -266,9 +284,6 @@ function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} setUserRole={setUserRole} />} />
               <Route path="/signup" element={<Signup setIsLoggedIn={setIsLoggedIn} setUserRole={setUserRole} />} />
-                      <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />        
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
               {/* Protected Routes */}
               <Route

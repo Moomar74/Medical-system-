@@ -18,7 +18,7 @@ const About = () => {
         const data = await getDoctors();
         setDoctors(data);
       } catch (err) {
-        setError('Failed to load doctors');
+        // setError('Failed to load doctors');
       } finally {
         setLoading(false);
       }
@@ -31,7 +31,7 @@ const About = () => {
       {/* Hero Section */}
       <motion.section
         className="relative bg-gradient-to-r from-[#FF9999] to-white py-24 text-center overflow-hidden"
-   
+
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -130,8 +130,18 @@ const About = () => {
                 whileHover={{ scale: 1.05 }}
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-[#FF9999]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg pointer-events-none"></div>
-                <div className="w-24 h-24 bg-[#FF9999] rounded-full mx-auto mb-6 flex items-center justify-center text-white font-bold text-3xl">
-                  {doctor.name ? doctor.name.charAt(4) : '?'}
+                <div className="flex justify-center mb-6">
+                  {doctor.profilePicture ? (
+                    <img
+                      src={doctor.profilePicture}
+                      alt={`${doctor.name}'s profile`}
+                      className="w-24 h-24 rounded-full object-cover border-2 border-[#FF9999]"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-[#FF9999] rounded-full flex items-center justify-center text-white font-bold text-3xl">
+                      {doctor.name ? doctor.name.charAt(0).toUpperCase() : '?'}
+                    </div>
+                  )}
                 </div>
                 <h3 className="text-xl font-bold font-montserrat text-gray-800">
                   {doctor.name}
@@ -139,7 +149,7 @@ const About = () => {
                 <p className="text-[#FF9999] font-montserrat font-semibold mt-2">
                   {doctor.specialty}
                 </p>
-             
+
                 {/* Optionally add a bio if you add it to the Doctor model */}
               </motion.div>
             ))}

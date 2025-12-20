@@ -1,10 +1,10 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode'; 
+import { jwtDecode } from 'jwt-decode';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  const role = localStorage.getItem('role') || sessionStorage.getItem('role');
 
   // If no token, redirect to login
   if (!token) {
@@ -15,12 +15,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     // Decode token to check expiration
     const decoded = jwtDecode(token);
     const currentTime = Date.now() / 1000;
-    
-    // If token is expired, clear localStorage and redirect to login
+
+    // If token is expired, clear storage and redirect to login
     if (decoded.exp < currentTime) {
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('userId');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('role');
+      sessionStorage.removeItem('userId');
       return <Navigate to="/login" replace />;
     }
 
@@ -37,11 +40,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     // If token is valid and role check passes (if applicable), render the children
     return children;
   } catch (err) {
-    // If token is invalid (e.g., malformed), clear localStorage and redirect to login
+    // If token is invalid (e.g., malformed), clear storage and redirect to login
     console.error('Error decoding token:', err);
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('userId');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('role');
+    sessionStorage.removeItem('userId');
     return <Navigate to="/login" replace />;
   }
 };

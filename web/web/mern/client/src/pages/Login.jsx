@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { login } from '../services/authService';
+import { setAuthData } from '../utils/storage';
 import '../assets/css/styles.css';
 
 const Login = ({ setIsLoggedIn }) => {
@@ -16,20 +17,16 @@ const Login = ({ setIsLoggedIn }) => {
       return;
     }
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
-        email,
-        password,
-      });
-      const { token, role, userId } = response.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', role);
-      localStorage.setItem('userId', userId);
+      const { token, user } = await login(email, password);
+
+      // Use helper to decide between sessionStorage (Admin) or localStorage (others)
+      setAuthData(token, user.role, user.id);
+
       setIsLoggedIn(true);
-      console.log('Login successful, data set:', { token, role, userId });
-      navigate('/appointments');
+      console.log('Login successful, storage updated'); // Debug log
+      navigate('/account');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
-      console.error('Login error:', err.response?.data || err);
     }
   };
 
@@ -79,11 +76,6 @@ const Login = ({ setIsLoggedIn }) => {
           </button>
         </form>
         <p className="mt-4 text-center font-open-sans text-gray-600">
-          <a href="/forgot-password" className="text-pink-500 hover:underline">
-            Forgot Password?
-          </a>
-        </p>
-        <p className="mt-2 text-center font-open-sans text-gray-600">
           Don't have an account?{' '}
           <a href="/signup" className="text-pink-500 hover:underline">
             Sign up

@@ -1,11 +1,7 @@
 const User = require('../Models/User');
+const Doctor = require('../Models/Doctor');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const Doctor = require('../Models/Doctor');
-const crypto = require('crypto');
-const transporter = require('../utils/emailService');
-
-
 
 exports.signup = async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -56,11 +52,56 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email });
+    // First check user collection
+    let user = await User.findOne({ email });
+    let isDoctor = false;
+    let doctorData = null;
+
+    // If not in users collection, check doctors collection
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      doctorData = await Doctor.findOne({ email });
+      if (!doctorData) {
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
+
+      isDoctor = true;
+      // Check doctor password
+      const isMatch = await doctorData.isValidPassword(password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
+
+      // Create payload for doctor
+      const payload = {
+        user: {
+          id: doctorData._id,
+          role: 'doctor',
+          name: doctorData.name,
+          email: doctorData.email,
+          specialty: doctorData.specialty
+        }
+      };
+
+      // Generate token
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+      console.log('Token generated for doctor login:', token);
+
+      // Store doctorId directly in localStorage
+      return res.json({
+        token,
+        user: {
+          id: doctorData._id,
+          name: doctorData.name,
+          email: doctorData.email,
+          role: 'doctor',
+          specialty: doctorData.specialty,
+          isDirectDoctor: true
+        },
+        doctorId: doctorData._id  // send doctorId directly
+      });
     }
 
+    // Regular user login
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
@@ -68,7 +109,7 @@ exports.login = async (req, res) => {
 
     const payload = { user: { id: user._id, role: user.role, name: user.name, email: user.email } };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-    console.log('Token generated for login:', token);
+    console.log('Token generated for user login:', token);
 
     res.json({
       token,
@@ -82,10 +123,52 @@ exports.login = async (req, res) => {
 
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const userId = req.user.id;
+    console.log('Getting profile for userId:', userId, 'role:', req.user.role);
+
+    // Check if this is a standalone doctor
+    if (req.user.role === 'doctor' && (req.user.isDirectDoctor || req.user.doctorId)) {
+      // First try to find by doctorId if available
+      const doctorId = req.user.doctorId || userId;
+      console.log('Looking for doctor profile with doctorId:', doctorId);
+
+      const doctor = await Doctor.findById(doctorId).select('-password');
+      if (doctor) {
+        console.log('Found doctor profile for standalone doctor');
+        return res.json({
+          _id: doctor._id,
+          name: doctor.name,
+          email: doctor.email,
+          role: 'doctor',
+          specialty: doctor.specialty,
+          phone: doctor.phone,
+          profilePicture: doctor.profilePicture, // Include profile picture
+          isDirectDoctor: true
+        });
+      }
     }
+
+    // Fallback to user collection for regular users or legacy doctor accounts
+    console.log('Looking for profile in User collection');
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      console.log('No user profile found for ID:', userId);
+      return res.status(404).json({ message: 'Profile not found' });
+    }
+
+    // If this is a legacy doctor, try to get additional doctor info
+    if (user.role === 'doctor') {
+      try {
+        const doctorInfo = await Doctor.findOne({ userId: user._id });
+        if (doctorInfo) {
+          user.specialty = doctorInfo.specialty || user.specialty;
+        }
+      } catch (err) {
+        console.error('Error fetching additional doctor info:', err);
+      }
+    }
+
+    console.log('Found user profile in User collection');
     res.json(user);
   } catch (error) {
     console.error('Get profile error:', error);
@@ -96,7 +179,8 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, email, specialty } = req.body;
+    const { name, email, specialty, phone, profilePicture } = req.body; // Added profilePicture
+    console.log('🔷 Updating profile for user:', userId, 'role:', req.user.role);
 
     // Input validation
     if (!name) {
@@ -106,151 +190,97 @@ exports.updateProfile = async (req, res) => {
       return res.status(400).json({ message: 'Invalid email format' });
     }
 
+    // Create update data with common fields
     const updateData = { name };
     if (email) updateData.email = email;
     if (specialty && req.user.role === 'doctor') updateData.specialty = specialty;
+    if (phone && req.user.role === 'doctor') updateData.phone = phone;
 
+    // Handle profile picture (base64)
+    if (profilePicture !== undefined) {
+      // Validate if it's a valid base64 image or null
+      if (profilePicture === null || profilePicture === '') {
+        updateData.profilePicture = null;
+        console.log('⚠️ Profile picture removed');
+      } else if (profilePicture.startsWith('data:image/')) {
+        updateData.profilePicture = profilePicture;
+        console.log('✅ Profile picture updated (base64, size:', (profilePicture.length / 1024).toFixed(2), 'KB)');
+      } else {
+        console.log('⚠️ Invalid profile picture format, skipping');
+      }
+    }
+
+    // Check if this is a standalone doctor account
+    if (req.user.role === 'doctor' && (req.user.isDirectDoctor || req.user.doctorId)) {
+      const doctorId = req.user.doctorId || userId;
+      console.log('Updating standalone doctor profile with ID:', doctorId);
+
+      const doctor = await Doctor.findByIdAndUpdate(
+        doctorId,
+        updateData,
+        { new: true, runValidators: true }
+      ).select('-password');
+
+      if (!doctor) {
+        return res.status(404).json({ message: 'Doctor profile not found' });
+      }
+
+      console.log('✅ Doctor profile updated successfully');
+      return res.json({
+        _id: doctor._id,
+        name: doctor.name,
+        email: doctor.email,
+        role: 'doctor',
+        specialty: doctor.specialty,
+        phone: doctor.phone,
+        profilePicture: doctor.profilePicture, // Include profile picture
+        isDirectDoctor: true
+      });
+    }
+
+    // For regular users or legacy doctors, update the user record
+    console.log('Updating regular user profile');
     const user = await User.findByIdAndUpdate(
       userId,
       updateData,
       { new: true, runValidators: true }
-    );
+    ).select('-password');
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ _id: user._id, name: user.name, email: user.email, role: user.role, specialty: user.specialty });
-  } catch (error) {
-    console.error('Update profile error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
+    // If this is a legacy doctor, also update the doctor record
+    if (user.role === 'doctor') {
+      try {
+        const doctorRecord = await Doctor.findOne({ userId: user._id });
+        if (doctorRecord) {
+          console.log('Updating associated doctor record');
+          const doctorUpdateData = {};
+          if (name) doctorUpdateData.name = name;
+          if (email) doctorUpdateData.email = email;
+          if (specialty) doctorUpdateData.specialty = specialty;
+          if (phone) doctorUpdateData.phone = phone;
+          if (profilePicture !== undefined) doctorUpdateData.profilePicture = updateData.profilePicture;
 
-exports.createDoctor = async (req, res) => {
-  try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Unauthorized: Only admins can create doctors' });
+          await Doctor.findByIdAndUpdate(doctorRecord._id, doctorUpdateData);
+        }
+      } catch (err) {
+        console.error('Error updating associated doctor record:', err);
+      }
     }
 
-    const { name, email, password, specialty } = req.body;
-
-    // Input validation
-    if (!name || !email || !password || !specialty) {
-      return res.status(400).json({ message: 'Name, email, password, and specialty are required' });
-    }
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      return res.status(400).json({ message: 'Invalid email format' });
-    }
-    if (password.length < 8) {
-      return res.status(400).json({ message: 'Password must be at least 8 characters' });
-    }
-
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    user = new User({ name, email, password, role: 'doctor', specialty });
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-    await user.save();
-
-    // Add to doctors collection
-    const doctor = new Doctor({
-      userId: user._id,
+    console.log('✅ Regular user profile updated successfully');
+    res.json({
+      _id: user._id,
       name: user.name,
       email: user.email,
-      specialty: user.specialty
+      role: user.role,
+      specialty: user.specialty || '',
+      profilePicture: user.profilePicture || null // Include profile picture
     });
-    await doctor.save();
-
-    res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role, specialty: user.specialty });
   } catch (error) {
-    console.error('Create doctor error:', error);
+    console.error('❌ Update profile error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-exports.deleteDoctor = async (req, res) => {
-  try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Unauthorized: Only admins can delete doctors' });
-    }
-
-    const doctorId = req.params.doctorId;
-    const doctor = await Doctor.findById(doctorId);
-
-    if (!doctor) {
-      return res.status(404).json({ message: 'Doctor not found' });
-    }
-
-    await Doctor.findByIdAndDelete(doctorId);
-    res.json({ message: 'Doctor deleted successfully' });
-  } catch (error) {
-    console.error('Delete doctor error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-exports.forgotPassword = async (req, res) => {
-  const { email } = req.body;
-
-  try {
-    if (!email) return res.status(400).json({ message: 'Email is required' });
-
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    const token = crypto.randomBytes(32).toString('hex');
-
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour expiry
-    await user.save();
-
-    const resetLink = `http://localhost:5173/reset-password/${token}`;
-
-    await transporter.sendMail({
-      to: user.email,
-      from: process.env.EMAIL_USER,
-      subject: 'Password Reset Request',
-      html: `
-        <p>You requested a password reset.</p>
-        <p><a href="${resetLink}">Click here to reset your password</a></p>
-        <p>This link will expire in 1 hour.</p>
-      `
-    });
-
-    res.json({ message: 'Password reset link has been sent to your email.' });
-  } catch (error) {
-    console.error('Forgot password error:', error.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// Reset password controller - handles new password submission
-exports.resetPassword = async (req, res) => {
-  const { token } = req.params;
-  const { password } = req.body;
-
-  try {
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired token' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    user.password = hashedPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-
-    await user.save();
-
-    res.json({ message: 'Password has been successfully reset' });
-  } catch (error) {
-    console.error('Reset password error:', error.message);
-    res.status(500).json({ message: 'Server error' });
   }
 };

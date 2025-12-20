@@ -11,9 +11,11 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(express.json()); // ✅ Add this line
-app.use(express.urlencoded({ extended: true }));
+// CRITICAL: Increase body parser limits for base64 images
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+console.log('✅ Body parser configured with 50mb limit for base64 images');
 
 // Debug environment variables
 console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
@@ -38,9 +40,9 @@ const connectDB = async () => {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         serverSelectionTimeoutMS: 5000,
-        maxPoolSize: 10, // Connection pooling
+        maxPoolSize: 10,
       });
-      console.log('Connected to MongoDB Atlas');
+      console.log('✅ Connected to MongoDB Atlas');
       mongoose.connection.db.admin().listDatabases((err, result) => {
         if (err) {
           console.error('Error listing databases:', err);
@@ -72,12 +74,13 @@ mongoose.disconnect().then(() => {
 });
 
 // Routes
-let authRouter, appointmentRouter, doctorRouter;
+let authRouter, appointmentRouter, doctorRouter, dentalHistoryRouter;
 try {
   authRouter = require('./Routers/authRouter');
   appointmentRouter = require('./Routers/appointmentRouter');
   doctorRouter = require('./Routers/doctorRouter');
-  console.log('Loaded routers from ./Routers/');
+  dentalHistoryRouter = require('./Routers/dentalHistoryRouter');
+  console.log('✅ Loaded routers from ./Routers/');
 } catch (e) {
   console.error('Error: Cannot find routers in ./Routers/. Exiting...', e);
   process.exit(1);
@@ -86,6 +89,7 @@ try {
 app.use('/api/auth', authRouter);
 app.use('/api/appointment', appointmentRouter);
 app.use('/api/doctor', doctorRouter);
+app.use('/api/dental-history', dentalHistoryRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -96,5 +100,5 @@ app.use((err, req, res, next) => {
 // Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

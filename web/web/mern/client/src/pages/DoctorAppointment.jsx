@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getDoctorAppointments, getAllAppointments } from '../services/appointmentService';
+import { getDoctorAppointments } from '../services/appointmentService';
+import { getAllAppointments } from '../services/adminService';
+import { getDoctorByUserId } from '../services/doctorService';
 import './DoctorAppointment.css';
 
 const DoctorAppointments = () => {
@@ -17,12 +19,42 @@ const DoctorAppointments = () => {
   const location = useLocation();
   const isAdminView = location.pathname === '/admin-appointments';
   const userId = localStorage.getItem('userId'); // Assume userId is stored on login
+  const role = localStorage.getItem('role');
+  const [doctorId, setDoctorId] = useState(localStorage.getItem('doctorId'));
+
+  useEffect(() => {
+    // If doctor and doctorId missing, fetch and store it
+    if (role === 'doctor' && !doctorId && userId) {
+      getDoctorByUserId(userId)
+        .then(doctor => {
+          localStorage.setItem('doctorId', doctor._id);
+          setDoctorId(doctor._id);
+        })
+        .catch(err => {
+          setError('Doctor profile not found.');
+        });
+    }
+  }, [role, doctorId, userId]);
 
   useEffect(() => {
     const fetchAppointments = async () => {
       setLoading(true);
       try {
-        const data = isAdminView ? await getAllAppointments() : await getDoctorAppointments(userId);
+        let data;
+        if (isAdminView) {
+          data = await getAllAppointments();
+        } else if (role === 'doctor') {
+          const docId = doctorId || localStorage.getItem('doctorId');
+          if (docId) {
+            data = await getDoctorAppointments(docId);
+          } else {
+            setError('Doctor profile not found.');
+            setLoading(false);
+            return;
+          }
+        } else {
+          data = [];
+        }
         setAppointments(data);
         setError(null);
       } catch (err) {
@@ -32,7 +64,7 @@ const DoctorAppointments = () => {
       }
     };
     fetchAppointments();
-  }, [isAdminView, userId]);
+  }, [isAdminView, doctorId, role]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

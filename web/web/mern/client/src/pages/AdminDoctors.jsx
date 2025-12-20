@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { createDoctor, deleteDoctor, getDoctors } from '../services/appointmentService';
+import { getDoctors } from '../services/appointmentService';
+import { createDoctor, deleteDoctor } from '../services/adminService';
 
 const AdminDoctors = () => {
   const [doctors, setDoctors] = useState([]);
@@ -9,8 +10,10 @@ const AdminDoctors = () => {
     name: '',
     email: '',
     password: '',
-    specialty: ''
+    specialty: '',
+    profilePicture: null
   });
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -36,18 +39,64 @@ const AdminDoctors = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file.');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size should be less than 5MB.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setFormData({ ...formData, profilePicture: base64String });
+        setPreviewUrl(base64String);
+        console.log('✅ Image converted to base64, size:', (base64String.length / 1024).toFixed(2), 'KB');
+      };
+      reader.onerror = () => {
+        setError('Failed to read image file.');
+      };
+      reader.readAsDataURL(file);
+      setError(null);
+    }
+  };
+
+  const removeProfilePicture = () => {
+    setFormData({ ...formData, profilePicture: null });
+    setPreviewUrl(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const newDoctor = await createDoctor({ ...formData, role: 'doctor' });
+      const submitData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        specialty: formData.specialty,
+        role: 'doctor',
+        profilePicture: formData.profilePicture
+      };
+
+      console.log('📤 Sending doctor data');
+
+      const newDoctor = await createDoctor(submitData);
       setDoctors([...doctors, newDoctor]);
-      setFormData({ name: '', email: '', password: '', specialty: '' });
+      setFormData({ name: '', email: '', password: '', specialty: '', profilePicture: null });
+      setPreviewUrl(null);
       setSuccess('Doctor added successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Failed to add doctor.');
+      console.error('Error adding doctor:', err);
+      setError(err.message || 'Failed to add doctor.');
     } finally {
       setLoading(false);
     }
@@ -117,14 +166,57 @@ const AdminDoctors = () => {
         )}
 
         <motion.div
-          className="mb-12 bg-white shadow-xl rounded-lg p-8 border-2 border-transparent bg-gradient-to-r from-[#FF9999]/10 to-white/10"
+          className="mb-12 bg-white shadow-xl rounded-lg p-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          whileHover={{ scale: 1.02 }}
         >
           <h2 className="text-3xl font-bold font-montserrat text-gray-800 mb-6">Add New Doctor</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block font-montserrat text-gray-600 font-semibold mb-2">
+                Profile Picture
+              </label>
+              <div className="flex items-center space-x-4">
+                {previewUrl ? (
+                  <div className="relative">
+                    <img
+                      src={previewUrl}
+                      alt="Profile preview"
+                      className="w-24 h-24 rounded-full object-cover border-2 border-[#FF9999]"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeProfilePicture}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-400">
+                    <span className="text-gray-400 text-xs">No image</span>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    id="profilePicture"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="profilePicture"
+                    className="inline-block bg-gray-200 text-gray-700 font-montserrat font-semibold py-2 px-4 rounded-lg cursor-pointer hover:bg-gray-300 transition"
+                  >
+                    Choose Image
+                  </label>
+                  <p className="text-sm text-gray-500 mt-2">JPG, PNG or GIF (max 5MB)</p>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label htmlFor="name" className="block font-montserrat text-gray-600 font-semibold mb-2">
                 Name
@@ -136,11 +228,11 @@ const AdminDoctors = () => {
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Doctor's full name"
-                className="w-full p-3 border border-gray-300 rounded-lg font-open-sans focus:outline-none focus:ring-2 focus:ring-[#FF9999]"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF9999]"
                 required
-                aria-required="true"
               />
             </div>
+
             <div>
               <label htmlFor="email" className="block font-montserrat text-gray-600 font-semibold mb-2">
                 Email
@@ -152,11 +244,11 @@ const AdminDoctors = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="doctor@example.com"
-                className="w-full p-3 border border-gray-300 rounded-lg font-open-sans focus:outline-none focus:ring-2 focus:ring-[#FF9999]"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF9999]"
                 required
-                aria-required="true"
               />
             </div>
+
             <div>
               <label htmlFor="password" className="block font-montserrat text-gray-600 font-semibold mb-2">
                 Password
@@ -168,11 +260,11 @@ const AdminDoctors = () => {
                 value={formData.password}
                 onChange={handleInputChange}
                 placeholder="Create a password"
-                className="w-full p-3 border border-gray-300 rounded-lg font-open-sans focus:outline-none focus:ring-2 focus:ring-[#FF9999]"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF9999]"
                 required
-                aria-required="true"
               />
             </div>
+
             <div>
               <label htmlFor="specialty" className="block font-montserrat text-gray-600 font-semibold mb-2">
                 Specialty
@@ -184,18 +276,17 @@ const AdminDoctors = () => {
                 value={formData.specialty}
                 onChange={handleInputChange}
                 placeholder="e.g., Orthodontics"
-                className="w-full p-3 border border-gray-300 rounded-lg font-open-sans focus:outline-none focus:ring-2 focus:ring-[#FF9999]"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF9999]"
                 required
-                aria-required="true"
               />
             </div>
+
             <div className="md:col-span-2">
               <motion.button
                 type="submit"
-                className="bg-[#FF9999] text-white font-montserrat font-bold py-2 px-6 rounded-full hover:bg-pink-600 transition duration-300"
+                className="bg-[#FF9999] text-white font-montserrat font-bold py-2 px-6 rounded-full hover:bg-pink-600 transition"
                 whileHover={{ scale: 1.05 }}
                 disabled={loading}
-                aria-label="Add doctor"
               >
                 {loading ? 'Adding...' : 'Add Doctor'}
               </motion.button>
@@ -204,98 +295,88 @@ const AdminDoctors = () => {
         </motion.div>
 
         {loading ? (
-          <motion.p
-            className="text-center text-gray-600 font-open-sans"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            Loading...
-          </motion.p>
+          <p className="text-center text-gray-600">Loading...</p>
         ) : doctors.length === 0 ? (
-          <motion.p
-            className="text-center text-gray-600 font-open-sans"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            No doctors added yet.
-          </motion.p>
+          <p className="text-center text-gray-600">No doctors added yet.</p>
         ) : (
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            {doctors.map((doctor, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {doctors.map((doctor) => (
               <motion.div
                 key={doctor._id}
-                className="bg-white shadow-lg rounded-lg p-6 border-2 border-transparent bg-gradient-to-r from-[#FF9999]/10 to-white/10"
+                className="bg-white shadow-lg rounded-lg p-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <h3 className="text-xl font-bold font-montserrat text-gray-800 mb-2">{doctor.name}</h3>
-                <p className="font-open-sans text-gray-600 mb-1">
+                <div className="flex justify-center mb-4">
+                  {doctor.profilePicture ? (
+                    <img
+                      src={doctor.profilePicture}
+                      alt={`${doctor.name}'s profile`}
+                      className="w-20 h-20 rounded-full object-cover border-2 border-[#FF9999]"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-[#FF9999] flex items-center justify-center border-2 border-[#FF9999]">
+                      <span className="text-white text-2xl font-bold">
+                        {doctor.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">{doctor.name}</h3>
+                <p className="text-gray-600 mb-1 text-center">
                   <strong>Email:</strong> {doctor.email}
                 </p>
-                <p className="font-open-sans text-gray-600 mb-4">
+                <p className="text-gray-600 mb-4 text-center">
                   <strong>Specialty:</strong> {doctor.specialty}
                 </p>
-                <motion.button
-                  onClick={() => handleDelete(doctor._id)}
-                  className="bg-[#FF9999] text-white font-montserrat font-semibold py-1 px-3 rounded-full hover:bg-pink-600 transition duration-300"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  aria-label={`Delete doctor ${doctor.name}`}
-                >
-                  Delete
-                </motion.button>
+                <div className="flex justify-center">
+                  <motion.button
+                    onClick={() => handleDelete(doctor._id)}
+                    className="bg-[#FF9999] text-white font-semibold py-1 px-3 rounded-full hover:bg-pink-600 transition"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    Delete
+                  </motion.button>
+                </div>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         )}
       </section>
 
-      <motion.footer
-        className="bg-[#333333] text-white py-12"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
+      <footer className="bg-[#333333] text-white py-12">
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-xl font-montserrat font-bold mb-4">Dental Clinic</h3>
-            <p className="font-open-sans">Transforming smiles with care and precision.</p>
+            <h3 className="text-xl font-bold mb-4">Dental Clinic</h3>
+            <p>Transforming smiles with care and precision.</p>
           </div>
           <div>
-            <h3 className="text-xl font-montserrat font-bold mb-4">Quick Links</h3>
-            <ul className="space-y-2 font-open-sans">
-              <li><Link to="/about" className="hover:text-[#FF9999] transition">About</Link></li>
-              <li><Link to="/services" className="hover:text-[#FF9999] transition">Services</Link></li>
-              <li><Link to="/contact" className="hover:text-[#FF9999] transition">Contact</Link></li>
+            <h3 className="text-xl font-bold mb-4">Quick Links</h3>
+            <ul className="space-y-2">
+              <li><Link to="/about" className="hover:text-[#FF9999]">About</Link></li>
+              <li><Link to="/services" className="hover:text-[#FF9999]">Services</Link></li>
+              <li><Link to="/contact" className="hover:text-[#FF9999]">Contact</Link></li>
             </ul>
           </div>
           <div>
-            <h3 className="text-xl font-montserrat font-bold mb-4">Connect</h3>
+            <h3 className="text-xl font-bold mb-4">Connect</h3>
             <div className="flex space-x-4">
-              <a href="#" className="text-2xl hover:text-[#FF9999] transition" aria-label="Follow us on Facebook">
+              <a href="#" className="text-2xl hover:text-[#FF9999]">
                 <i className="fab fa-facebook-f"></i>
               </a>
-              <a href="#" className="text-2xl hover:text-[#FF9999] transition" aria-label="Follow us on Instagram">
+              <a href="#" className="text-2xl hover:text-[#FF9999]">
                 <i className="fab fa-instagram"></i>
               </a>
-              <a href="#" className="text-2xl hover:text-[#FF9999] transition" aria-label="Follow us on Twitter">
+              <a href="#" className="text-2xl hover:text-[#FF9999]">
                 <i className="fab fa-twitter"></i>
               </a>
             </div>
           </div>
         </div>
-        <div className="mt-8 text-center font-open-sans text-gray-400">
+        <div className="mt-8 text-center text-gray-400">
           <p>© 2025 Dental Clinic. All rights reserved.</p>
         </div>
-      </motion.footer>
+      </footer>
     </div>
   );
 };

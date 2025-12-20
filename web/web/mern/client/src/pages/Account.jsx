@@ -1,32 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getAppointments, getDoctorAppointments, getAllAppointments, getDoctors } from '../services/appointmentService';
+import ProfileUpdateForm from '../components/ProfileUpdateForm';
+import DentalHistoryView from '../components/DentalHistoryView';
+import { getAppointments, getDoctorAppointments, getDoctors } from '../services/appointmentService';
+import { getAllAppointments } from '../services/adminService';
+import { getDoctorByUserId } from '../services/doctorService';
+import DoctorSchedule from '../components/DoctorSchedule';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import { FaUser } from 'react-icons/fa';
-import { FaCalendarAlt } from 'react-icons/fa';
-import { FaTools } from 'react-icons/fa';
-import { FaChartLine } from 'react-icons/fa';
+import { FaUser, FaCalendarAlt, FaTools, FaChartLine } from 'react-icons/fa';
+import { getToken, getRole, getUserId, setAuthData, clearAuthData } from '../utils/storage';
 
 const Account = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [userData, setUserData] = useState({ name: '', email: '', specialty: '' });
   const [appointments, setAppointments] = useState([]);
+  const [doctorId, setDoctorId] = useState(localStorage.getItem('doctorId') || '');
   const [doctors, setDoctors] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [availability, setAvailability] = useState({ date: '', startTime: '', endTime: '' });
-  const [userRole, setUserRole] = useState(localStorage.getItem('role') || null);
-  const [userId, setUserId] = useState(localStorage.getItem('userId') || null);
+  const [userRole, setUserRole] = useState(getRole());
+  const [userId, setUserId] = useState(getUserId());
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkTokenAndFetchData = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
+        const token = getToken();
         if (!token) {
           navigate('/login', { replace: true });
           return;
@@ -37,53 +41,57 @@ const Account = () => {
         const currentTime = Date.now() / 1000;
         if (decoded.exp < currentTime) {
           // Token is expired
-          localStorage.removeItem('token');
-          localStorage.removeItem('role');
-          localStorage.removeItem('userId');
+          clearAuthData();
           navigate('/login', { replace: true });
           return;
         }
 
-        const profileResponse = await axios.get('http://localhost:5000/api/auth/profile', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        try {
+          const profileResponse = await axios.get('http://localhost:5000/api/auth/profile', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
 
-        const { name, email, specialty, _id, role } = profileResponse.data;
-        setUserData({ name, email, specialty: specialty || '' });
-        setUserRole(role);
-        setUserId(_id);
-        localStorage.setItem('role', role);
-        localStorage.setItem('userId', _id);
+          const { name, email, specialty, _id, role } = profileResponse.data;
+          setUserData({ name, email, specialty: specialty || '' });
+          setUserRole(role);
+          setUserId(_id);
 
-        let appointmentData = [];
-        if (role === 'user') {
-          appointmentData = await getAppointments();
-        } else if (role === 'doctor') {
-          appointmentData = await getDoctorAppointments(_id);
-        } else if (role === 'admin') {
-          appointmentData = await getAllAppointments();
-          const doctorData = await getDoctors();
-          setDoctors(doctorData);
+          // Use helper to keep storage consistent
+          setAuthData(token, role, _id);
+
+          let appointmentData = [];
+          if (role === 'doctor') {
+            // Fetch doctorId from doctorService if not in localStorage
+            let docId = localStorage.getItem('doctorId');
+            if (!docId) {
+              const doctor = await getDoctorByUserId(_id);
+              docId = doctor._id;
+              localStorage.setItem('doctorId', docId);
+            }
+            setDoctorId(docId);
+            appointmentData = await getDoctorAppointments(docId);
+          } else if (role === 'user') {
+            appointmentData = await getAppointments();
+          } else if (role === 'admin') {
+            appointmentData = await getAllAppointments();
+            const doctorData = await getDoctors();
+            setDoctors(doctorData);
+          }
+          setAppointments(appointmentData);
+          setError(null);
+        } catch (err) {
+          setError('Failed to load data.');
+        } finally {
+          setLoading(false);
         }
-        setAppointments(appointmentData);
-        setError(null);
       } catch (err) {
-        console.error('Error in fetchInitialData:', err);
-        // Only redirect to login if the error is due to auth (401) or token issues
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('role');
-          localStorage.removeItem('userId');
-          navigate('/login', { replace: true });
-        } else {
-          setError('Failed to load data. Please try again.');
-        }
+        setError('Failed to load data.');
       } finally {
         setLoading(false);
       }
     };
     checkTokenAndFetchData();
-  }, [navigate]);
+  }, [navigate, userRole]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -100,7 +108,7 @@ const Account = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       await axios.put('http://localhost:5000/api/auth/profile', userData, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -108,9 +116,7 @@ const Account = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('userId');
+        clearAuthData();
         navigate('/login', { replace: true });
       } else {
         setError('Failed to update profile.');
@@ -125,7 +131,7 @@ const Account = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
+      const token = getToken();
       await axios.post('http://localhost:5000/api/doctor/availability', { ...availability, doctorId: userId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -134,9 +140,7 @@ const Account = () => {
       setAvailability({ date: '', startTime: '', endTime: '' });
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('userId');
+        clearAuthData();
         navigate('/login', { replace: true });
       } else {
         setError('Failed to update availability.');
@@ -148,6 +152,17 @@ const Account = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'dental-history':
+        return (
+          <motion.div
+            className="bg-white shadow-lg rounded-xl p-8 border border-gray-200"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <DentalHistoryView userRole={userRole} />
+          </motion.div>
+        );
       case 'profile':
         return (
           <motion.div
@@ -156,61 +171,33 @@ const Account = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-3xl font-bold font-montserrat text-gray-800 mb-6">Edit Profile</h2>
-            <form onSubmit={handleProfileUpdate} className="grid grid-cols-1 gap-6">
-              <div>
-                <label htmlFor="name" className="block font-montserrat text-gray-700 font-semibold mb-2">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={userData.name}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg font-open-sans focus:outline-none focus:ring-2 focus:ring-[#FF9999] transition-all"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="block font-montserrat text-gray-700 font-semibold mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={userData.email}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg font-open-sans focus:outline-none focus:ring-2 focus:ring-[#FF9999] transition-all"
-                  required
-                />
-              </div>
-              {userRole === 'doctor' && (
-                <div>
-                  <label htmlFor="specialty" className="block font-montserrat text-gray-700 font-semibold mb-2">
-                    Specialty
-                  </label>
-                  <input
-                    type="text"
-                    id="specialty"
-                    name="specialty"
-                    value={userData.specialty}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg font-open-sans focus:outline-none focus:ring-2 focus:ring-[#FF9999] transition-all"
-                  />
-                </div>
-              )}
-              <motion.button
-                type="submit"
-                className="bg-[#FF9999] text-white font-montserrat font-bold py-3 px-6 rounded-lg hover:bg-pink-600 transition-all duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                disabled={loading}
+            <ProfileUpdateForm
+              onProfileUpdate={(updatedData) => {
+                setUserData(updatedData);
+                setSuccess('Profile updated successfully!');
+                setTimeout(() => setSuccess(''), 3000);
+              }}
+            />
+            {success && (
+              <motion.div
+                className="mt-4 p-3 bg-green-100 text-green-700 rounded-lg"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
               >
-                {loading ? 'Updating...' : 'Update Profile'}
-              </motion.button>
-            </form>
+                {success}
+              </motion.div>
+            )}
+            {error && (
+              <motion.div
+                className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                {error}
+              </motion.div>
+            )}
           </motion.div>
         );
       case 'appointments':
@@ -232,7 +219,9 @@ const Account = () => {
                 Book Appointment
               </Link>
             )}
-            {loading ? (
+            {userRole === 'doctor' ? (
+              <DoctorSchedule doctorId={doctorId} />
+            ) : loading ? (
               <p className="text-center text-gray-600 font-open-sans">Loading...</p>
             ) : appointments.length === 0 ? (
               <p className="text-center text-gray-600 font-open-sans">No appointments found.</p>
@@ -475,8 +464,8 @@ const Account = () => {
           {userRole === 'user'
             ? 'Manage your dental care with ease.'
             : userRole === 'doctor'
-            ? 'Oversee your schedule and patient care.'
-            : 'Administer clinic operations efficiently.'}
+              ? 'Oversee your schedule and patient care.'
+              : 'Administer clinic operations efficiently.'}
         </motion.p>
       </motion.section>
 
@@ -505,9 +494,8 @@ const Account = () => {
         <div className="mb-8">
           <nav className="flex justify-center space-x-4 bg-white shadow-sm rounded-lg p-2">
             <motion.button
-              className={`flex items-center py-3 px-6 font-montserrat font-semibold rounded-md transition-all duration-300 ${
-                activeTab === 'profile' ? 'bg-[#FF9999] text-white' : 'text-gray-600 hover:bg-gray-100'
-              }`}
+              className={`flex items-center py-3 px-6 font-montserrat font-semibold rounded-md transition-all duration-300 ${activeTab === 'profile' ? 'bg-[#FF9999] text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
               onClick={() => setActiveTab('profile')}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -515,9 +503,8 @@ const Account = () => {
               <FaUser className="mr-2" /> Profile
             </motion.button>
             <motion.button
-              className={`flex items-center py-3 px-6 font-montserrat font-semibold rounded-md transition-all duration-300 ${
-                activeTab === 'appointments' ? 'bg-[#FF9999] text-white' : 'text-gray-600 hover:bg-gray-100'
-              }`}
+              className={`flex items-center py-3 px-6 font-montserrat font-semibold rounded-md transition-all duration-300 ${activeTab === 'appointments' ? 'bg-[#FF9999] text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
               onClick={() => setActiveTab('appointments')}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -526,9 +513,8 @@ const Account = () => {
             </motion.button>
             {userRole === 'doctor' && (
               <motion.button
-                className={`flex items-center py-3 px-6 font-montserrat font-semibold rounded-md transition-all duration-300 ${
-                  activeTab === 'doctor-tools' ? 'bg-[#FF9999] text-white' : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                className={`flex items-center py-3 px-6 font-montserrat font-semibold rounded-md transition-all duration-300 ${activeTab === 'doctor-tools' ? 'bg-[#FF9999] text-white' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
                 onClick={() => setActiveTab('doctor-tools')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -538,9 +524,8 @@ const Account = () => {
             )}
             {userRole === 'admin' && (
               <motion.button
-                className={`flex items-center py-3 px-6 font-montserrat font-semibold rounded-md transition-all duration-300 ${
-                  activeTab === 'admin-tools' ? 'bg-[#FF9999] text-white' : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                className={`flex items-center py-3 px-6 font-montserrat font-semibold rounded-md transition-all duration-300 ${activeTab === 'admin-tools' ? 'bg-[#FF9999] text-white' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
                 onClick={() => setActiveTab('admin-tools')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
