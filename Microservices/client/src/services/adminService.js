@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getToken } from '../utils/storage';
 
-const ADMIN_API_URL = 'http://localhost:5001/api/admin';
+const ADMIN_API_URL = 'http://localhost:5000/api/admin';
 
 const getHeaders = () => ({
     headers: { Authorization: `Bearer ${getToken()}` }

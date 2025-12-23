@@ -138,10 +138,10 @@ export const deleteDoctor = async (doctorId) => {
 
 export const getDoctors = async () => {
   try {
-    const response = await axios.get(`${API_URL}/doctors`, {
+    const response = await axios.get(`${DOCTOR_URL}`, {
       headers: { Authorization: `Bearer ${getToken()}` }
     });
-    return response.data.doctors;
+    return response.data.data;
   } catch (error) {
     console.error('Error fetching doctors:', error);
     throw { message: 'Failed to load doctors', error: error.message };
