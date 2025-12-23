@@ -26,7 +26,7 @@ export const clearAuthData = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('userId');
-    localStorage.removeItem('doctorId'); // Clear doctor specific info too
+    localStorage.removeItem('doctorId'); 
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('role');
     sessionStorage.removeItem('userId');
