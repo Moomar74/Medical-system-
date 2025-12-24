@@ -20,37 +20,36 @@ app.use((req, res, next) => {
 // The Gateway forwards requests to the appropriate microservice
 // -------------------------------------------------------------------
 
-// 1. Admin Service (Port 5001)
+// 1. Admin Service
 app.use('/api/admin', createProxyMiddleware({
-    target: 'http://localhost:5001',
+    target: process.env.ADMIN_SERVICE_URL || 'http://localhost:5001',
     changeOrigin: true,
     onError: (err, req, res) => {
         res.status(500).json({ message: 'Admin Service is down' });
     }
 }));
 
-// 2. Auth Service (Port 5002)
+// 2. Auth Service
 app.use('/api/auth', createProxyMiddleware({
-    target: 'http://localhost:5002',
+    target: process.env.AUTH_SERVICE_URL || 'http://localhost:5002',
     changeOrigin: true,
     onError: (err, req, res) => {
         res.status(500).json({ message: 'Auth Service is down' });
     }
 }));
 
-// 2. Booking/Appointment Service (Port 5003)
+// 3. Booking/Appointment Service
 app.use('/api/appointment', createProxyMiddleware({
-    target: 'http://localhost:5003',
+    target: process.env.BOOKING_SERVICE_URL || 'http://localhost:5003',
     changeOrigin: true,
     onError: (err, req, res) => {
         res.status(500).json({ message: 'Booking Service is down' });
     }
 }));
 
-// 3. Patient Service & Dental History (Port 5004)
-// Grouping dental history under patient service logic
+// 4. Patient Service & Dental History
 app.use('/api/patient', createProxyMiddleware({
-    target: 'http://localhost:5004',
+    target: process.env.PATIENT_SERVICE_URL || 'http://localhost:5004',
     changeOrigin: true,
     onError: (err, req, res) => {
         res.status(500).json({ message: 'Patient Service is down' });
@@ -58,16 +57,16 @@ app.use('/api/patient', createProxyMiddleware({
 }));
 
 app.use('/api/dental-history', createProxyMiddleware({
-    target: 'http://localhost:5004',
+    target: process.env.PATIENT_SERVICE_URL || 'http://localhost:5004',
     changeOrigin: true,
     onError: (err, req, res) => {
         res.status(500).json({ message: 'Patient Service (Dental History) is down' });
     }
 }));
 
-// 4. Doctor Service (Port 5005)
+// 5. Doctor Service
 app.use('/api/doctor', createProxyMiddleware({
-    target: 'http://localhost:5005',
+    target: process.env.DOCTOR_SERVICE_URL || 'http://localhost:5005',
     changeOrigin: true,
     onError: (err, req, res) => {
         res.status(500).json({ message: 'Doctor Service is down' });
